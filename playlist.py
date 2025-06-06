@@ -33,7 +33,7 @@ def get_playlist_videos(youtube, playlist_id):
     request = youtube.playlistItems().list(
         part="snippet",
         playlistId=playlist_id,
-        maxResults=300
+        maxResults=5000
     )
     while request:
         response = request.execute()
@@ -47,6 +47,7 @@ def download_video_as_wav(url, output_path="downloads"):
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
+        'ffmpeg_location': r'C:\ffmpeg-2025-05-29-git-75960ac270-full_build\bin',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'wav',
@@ -56,7 +57,7 @@ def download_video_as_wav(url, output_path="downloads"):
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=True)
-        print(f"Téléchargé et converti : {info_dict['title']}.wav")
+        #print(f"Téléchargé et converti : {info_dict['title']}.wav")
 
 """
 def download_video_as_wav(url, output_path="downloads"):
@@ -74,10 +75,14 @@ def download_video_as_wav(url, output_path="downloads"):
 """
 
 def main():
+
+    dir_path = "downloads"
+    #dir_path = "tryhard"
+
     # Créer le dossier de téléchargement
-    if not os.path.exists("downloads"):
-        os.makedirs("downloads")
-        print("Dossier 'downloads' créé.")
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+        print("Dossier "+dir_path+" créé.")
     
     # Vérifie que credentials.json existe
     if not os.path.exists("credentials.json"):
@@ -90,9 +95,12 @@ def main():
         youtube = get_authenticated_service()
         print("Connexion réussie.")
         
-        # ID de la playlist
+        # ID de la playlist 
+        #download
         playlist_id = "PLw3P29g6s_PeYszc-uwrjFf3-lGS0U-wb"
-        
+        # tryhard
+        #playlist_id = "PLO2J-X1ZFuLlnnR-sJUyhjnW_imk8sPFi"
+
         # Récupérer les URLs des vidéos dans la playlist
         print(f"Récupération des URLs de la playlist {playlist_id}...")
         video_urls = get_playlist_videos(youtube, playlist_id)
@@ -101,8 +109,13 @@ def main():
         # Télécharger chaque vidéo et convertir en WAV
         for index, url in enumerate(video_urls, start=1):
             try:
+                # si le fichier existe déjà, on ne le télécharge pas
+                file_name = os.path.join(dir_path, f"{index}.webm")
+                if os.path.exists(file_name):
+                    print(f"Le fichier {file_name} existe déjà, passage au suivant.")
+                    continue
                 print(f"Téléchargement et conversion de la vidéo {index}/{len(video_urls)} : {url}")
-                download_video_as_wav(url)
+                download_video_as_wav(url, output_path=dir_path)
                 print(f"Vidéo {index} téléchargée et convertie avec succès.")
             except Exception as e:
                 print(f"Erreur lors du téléchargement de la vidéo {index} : {e}")
